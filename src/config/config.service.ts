@@ -33,6 +33,14 @@ export class ConfigService {
       errors.push('grant_type');
     }
 
+    if (!config.grant_type) {
+      errors.push('group_filter');
+    }
+
+    if (!config.grant_type) {
+      errors.push('call_class');
+    }
+
     if (errors.length > 0) {
       throw new Error(
         `3CX configuration is incomplete. Missing fields: ${errors.join(', ')}`,

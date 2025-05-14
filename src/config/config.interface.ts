@@ -4,8 +4,9 @@ export interface ThreeCxConfig {
   client_id: string;
   client_secret: string;
   grant_type: string;
+  group_filter: string;
+  call_class: string;
 }
-
 export interface AppConfig {
   threecx: ThreeCxConfig;
 }
