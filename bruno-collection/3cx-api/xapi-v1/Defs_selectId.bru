@@ -1,0 +1,15 @@
+meta {
+  name: Defs_selectId
+  type: http
+  seq: 1
+}
+
+get {
+  url: {{url}}/xapi/v1/Defs?$select=Id
+  body: none
+  auth: inherit
+}
+
+params:query {
+  $select: Id
+}

@@ -1,0 +1,11 @@
+meta {
+  name: ReportExtensionStatisticsByGroup
+  type: http
+  seq: 3
+}
+
+get {
+  url: {{url}}/xapi/v1/ReportExtensionStatisticsByGroup/Pbx.GetExtensionStatisticsByGroupData(groupNumber='GRP0000',periodFrom=2025-01-01T03%3A00%3A00.000Z,periodTo=2026-01-01T03%3A00%3A00.000Z,callArea=0)
+  body: none
+  auth: inherit
+}

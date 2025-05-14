@@ -1,0 +1,16 @@
+meta {
+  name: callcontrol-dnnumber-devices-deviceid
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{url}}/callcontrol/:dnnumber/devices/:deviceid
+  body: none
+  auth: inherit
+}
+
+params:path {
+  deviceid: {{deviceid}}
+  dnnumber: {{dnnumber}}
+}

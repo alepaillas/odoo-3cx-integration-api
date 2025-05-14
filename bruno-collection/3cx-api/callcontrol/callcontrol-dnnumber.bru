@@ -1,0 +1,15 @@
+meta {
+  name: callcontrol-dnnumber
+  type: http
+  seq: 2
+}
+
+get {
+  url: {{url}}/callcontrol/:dnnumber
+  body: none
+  auth: inherit
+}
+
+params:path {
+  dnnumber: {{dnnumber}}
+}

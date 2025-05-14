@@ -1,0 +1,16 @@
+auth {
+  mode: bearer
+}
+
+auth:bearer {
+  token: {{process.env.token}}
+}
+
+vars:pre-request {
+  url: {{process.env.url}}
+  clientSecret: {{process.env.clientSecret}}
+  clientId: {{process.env.clientId}}
+  dnnumber: {{process.env.dnnumber}}
+  deviceid: {{process.env.deviceid}}
+  testPhoneNumber: {{process.env.testPhoneNumber}}
+}

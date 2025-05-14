@@ -1,0 +1,11 @@
+meta {
+  name: ReportCallCostByExtensionGroup
+  type: http
+  seq: 4
+}
+
+get {
+  url: {{url}}/xapi/v1/ReportCallCostByExtensionGroup/Pbx.GetCallCostByExtensionGroupData(periodFrom=2025-01-01T03%3A00%3A00.000Z,periodTo=2026-01-01T03%3A00%3A00.000Z,groupFilter='GRP0000',callClass=0)
+  body: none
+  auth: inherit
+}

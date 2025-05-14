@@ -1,0 +1,28 @@
+meta {
+  name: callcontrol-dnnumber-devices-deviceid-makecall
+  type: http
+  seq: 6
+}
+
+post {
+  url: {{url}}/callcontrol/:dnnumber/devices/:deviceid/makecall
+  body: json
+  auth: inherit
+}
+
+params:path {
+  deviceid: {{deviceid}}
+  dnnumber: {{dnnumber}}
+}
+
+body:json {
+  {
+    "destination": "{{testPhoneNumber}}",
+    "timeout": 0,
+    "attacheddata": {
+      "additionalProp1": "string",
+      "additionalProp2": "string",
+      "additionalProp3": "string"
+    }
+  }
+}
