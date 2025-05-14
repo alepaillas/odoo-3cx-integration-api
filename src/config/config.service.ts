@@ -64,8 +64,16 @@ export class ConfigService {
       errors.push('url');
     }
 
-    if (!config.api_key) {
-      errors.push('api_key');
+    if (!config.db) {
+      errors.push('db');
+    }
+
+    if (!config.username) {
+      errors.push('username');
+    }
+
+    if (!config.password) {
+      errors.push('password');
     }
 
     if (errors.length > 0) {

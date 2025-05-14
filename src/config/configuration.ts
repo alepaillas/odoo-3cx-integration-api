@@ -10,6 +10,8 @@ export default () => ({
   },
   odoo: {
     url: process.env.ODOO_URL,
-    api_key: process.env.ODOO_API_KEY,
+    db: process.env.ODOO_DB,
+    username: process.env.ODOO_USERNAME,
+    password: process.env.ODOO_PASSWORD,
   },
 });

@@ -9,7 +9,9 @@ export interface ThreeCxConfig {
 }
 export interface OdooConfig {
   url: string;
-  api_key: string;
+  db: string;
+  username: string;
+  password: string;
 }
 export interface AppConfig {
   threecx: ThreeCxConfig;
