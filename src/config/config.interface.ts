@@ -7,6 +7,10 @@ export interface ThreeCxConfig {
   group_filter: string;
   call_class: string;
 }
+export interface OdooConfig {
+  url: string;
+  api_key: string;
+}
 export interface AppConfig {
   threecx: ThreeCxConfig;
 }

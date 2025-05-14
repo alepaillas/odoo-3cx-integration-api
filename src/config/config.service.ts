@@ -1,7 +1,7 @@
 // src/config/config.service.ts
 import { Injectable } from '@nestjs/common';
 import { ConfigService as NestConfigService } from '@nestjs/config';
-import { ThreeCxConfig } from './config.interface';
+import { OdooConfig, ThreeCxConfig } from './config.interface';
 
 @Injectable()
 export class ConfigService {
@@ -39,6 +39,33 @@ export class ConfigService {
 
     if (!config.grant_type) {
       errors.push('call_class');
+    }
+
+    if (errors.length > 0) {
+      throw new Error(
+        `3CX configuration is incomplete. Missing fields: ${errors.join(', ')}`,
+      );
+    }
+
+    return config;
+  }
+
+  getOdooConfig(): OdooConfig {
+    const config = this.configService.get<OdooConfig>('odoo');
+
+    if (!config) {
+      throw new Error('3CX configuration is missing');
+    }
+
+    // Validate required fields
+    const errors: string[] = [];
+
+    if (!config.url) {
+      errors.push('url');
+    }
+
+    if (!config.api_key) {
+      errors.push('api_key');
     }
 
     if (errors.length > 0) {

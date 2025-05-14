@@ -8,4 +8,8 @@ export default () => ({
     group_filter: process.env.THREECX_GROUP_FILTER,
     call_class: process.env.THREECX_CALL_CLASS,
   },
+  odoo: {
+    url: process.env.ODOO_URL,
+    api_key: process.env.ODOO_API_KEY,
+  },
 });
