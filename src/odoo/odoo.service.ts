@@ -136,6 +136,104 @@ export class OdooService {
     }
   }
 
+  async setSystemParameter(
+    key: string,
+    value: string,
+  ): Promise<OdooSystemParameter> {
+    const config = this.configService.getOdooConfig();
+    const { url } = config;
+
+    // Authenticate if we don't have a session
+    if (!this.sessionCookie) {
+      await this.authenticate();
+    }
+
+    const apiUrl = `${url}/web/dataset/call_kw`;
+
+    // First, try to find if the parameter already exists
+    const searchData = {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'ir.config_parameter',
+        method: 'search',
+        args: [[['key', '=', key]]],
+        kwargs: {},
+      },
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Cookie: this.sessionCookie as string,
+    };
+
+    try {
+      // Search for existing parameter
+      const searchResponse = await firstValueFrom(
+        this.httpService.post<OdooResponse<number[]>>(apiUrl, searchData, {
+          headers,
+        }),
+      );
+
+      const paramId = searchResponse.data?.result?.[0] || false;
+
+      // Prepare the data for write operation
+      const writeData = {
+        jsonrpc: '2.0',
+        method: 'call',
+        params: {
+          model: 'ir.config_parameter',
+          method: paramId ? 'write' : 'create',
+          args: paramId ? [[paramId], { value }] : [{ key, value }],
+          kwargs: {},
+        },
+      };
+
+      // Execute the write operation
+      const writeResponse = await firstValueFrom(
+        this.httpService.post<OdooResponse<boolean | number>>(
+          apiUrl,
+          writeData,
+          { headers },
+        ),
+      );
+
+      if (writeResponse.data?.result === false) {
+        throw new Error('Failed to write system parameter');
+      }
+
+      // Return the updated parameter
+      const resultId =
+        paramId ||
+        (typeof writeResponse.data.result === 'number'
+          ? writeResponse.data.result
+          : false);
+
+      if (!resultId) {
+        throw new Error('Failed to get parameter ID after creation/update');
+      }
+
+      return {
+        id: resultId,
+        key,
+        value,
+      };
+    } catch (error) {
+      // If we get a session expired error, try to reauthenticate once
+      if (this.isSessionExpiredError(error)) {
+        this.logger.log('Session expired, attempting to reauthenticate');
+        await this.authenticate();
+
+        // Retry the operation with new session
+        return this.setSystemParameter(key, value);
+      }
+
+      const errorMessage = this.getErrorMessage(error);
+      this.logger.error(`Failed to set system parameter: ${errorMessage}`);
+      throw new Error(`Failed to set system parameter: ${errorMessage}`);
+    }
+  }
+
   private isSessionExpiredError(error: unknown): boolean {
     if (error instanceof Error) {
       return error.message.includes('Session Expired');

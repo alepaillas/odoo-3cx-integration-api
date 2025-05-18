@@ -1,0 +1,18 @@
+meta {
+  name: post-system-parameter
+  type: http
+  seq: 2
+}
+
+post {
+  url: {{url}}/odoo/system-parameter
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "key": "threecx.last_integration_datetime",
+    "value": "123456"
+  }
+}

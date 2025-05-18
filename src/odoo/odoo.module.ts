@@ -9,10 +9,10 @@ import { ConfigService } from 'src/config/config.service';
 
 @Module({
   imports: [
-    HttpModule, // This provides HttpService
+    HttpModule,
     ConfigModule.forRoot({
       load: [configuration],
-      isGlobal: true, // Makes ConfigModule available globally
+      isGlobal: true,
     }),
   ],
   providers: [OdooService, ConfigService],
