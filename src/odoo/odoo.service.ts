@@ -306,6 +306,60 @@ export class OdooService {
     }
   }
 
+  async findUserByName(name: string): Promise<number | null> {
+    const config = this.configService.getOdooConfig();
+    const { url } = config;
+
+    if (!this.sessionCookie) {
+      await this.authenticate();
+    }
+
+    const apiUrl = `${url}/web/dataset/call_kw`;
+
+    const data = {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'res.users',
+        method: 'search',
+        args: [[['name', '=', name]]],
+        kwargs: {},
+      },
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Cookie: this.sessionCookie as string,
+    };
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post<OdooResponse<number[]>>(apiUrl, data, {
+          headers,
+        }),
+      );
+
+      if (response.data.error) {
+        const error = response.data.error;
+        throw new Error(this.formatOdooError(error));
+      }
+
+      if (!response.data.result || response.data.result.length === 0) {
+        return null; // User not found
+      }
+
+      return response.data.result[0]; // Return the first user ID found
+    } catch (error) {
+      if (this.isSessionExpiredError(error)) {
+        this.logger.log('Session expired, attempting to reauthenticate');
+        await this.authenticate();
+        return this.findUserByName(name);
+      }
+
+      throw error;
+    }
+  }
+
   private isSessionExpiredError(error: unknown): boolean {
     if (error instanceof Error) {
       return error.message.includes('Session Expired');

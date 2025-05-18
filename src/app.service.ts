@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ThreeCxService } from './three-cx/three-cx.service';
 import { OdooService } from './odoo/odoo.service';
+import { CallCostResponse } from './three-cx/three-cx.interface';
 
 @Injectable()
 export class AppService {
@@ -33,19 +34,40 @@ export class AppService {
 
       const threeCxAccessToken = await this.threeCxService.getToken();
 
-      const reportCallCost =
+      const reportCallCost: CallCostResponse =
         await this.threeCxService.getReportCallCostByExtensionGroup(
           threeCxAccessToken,
           threeCxLastIntegrationDateTime,
         );
-      console.log(reportCallCost);
+      // console.log(reportCallCost);
+
+      // Iterate over each entry in the reportCallCost value array
+      for (const entry of reportCallCost.value) {
+        const leadName = `Llamada de ${entry.DstDn} atendida por ${entry.SrcDisplayName}`;
+
+        // Find the user ID for the salesperson
+        const userId = await this.odooService.findUserByName(
+          entry.SrcDisplayName,
+        );
+        if (!userId) {
+          throw new Error('User ID for salesperson not found');
+        }
+        // console.log(userId);
+
+        // Create a lead for each entry
+        await this.odooService.createLead({
+          name: leadName,
+          phone: entry.DstDn,
+          user_id: userId,
+        });
+      }
+
+      return 'Leads created successfully!';
     } catch (error) {
       const errorMessage = this.getErrorMessage(error);
       this.logger.error(`Failed to fetch call cost data: ${errorMessage}`);
       throw new Error(`Failed to fetch call cost data: ${errorMessage}`);
     }
-
-    return 'Hello World!';
   }
 
   private getErrorMessage(error: unknown): string {

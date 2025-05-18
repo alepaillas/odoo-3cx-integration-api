@@ -4,6 +4,7 @@ import {
   IsOptional,
   IsEmail,
   IsPhoneNumber,
+  IsNumber,
 } from 'class-validator';
 
 export class SetSystemParameterDto {
@@ -20,6 +21,10 @@ export class CreateLeadDto {
   @IsString()
   @IsNotEmpty({ message: 'Lead name is required' })
   name: string;
+
+  @IsNumber()
+  @IsNotEmpty({ message: 'User ID is required' })
+  user_id: number;
 
   @IsString()
   @IsOptional()
