@@ -1,7 +1,15 @@
 // src/three-cx/three-cx.controller.ts
-import { Controller, Post, Get, Query, Headers } from '@nestjs/common';
+import {
+  Controller,
+  Post,
+  Get,
+  Query,
+  Headers,
+  BadRequestException,
+} from '@nestjs/common';
 import { ThreeCxService } from './three-cx.service';
 import { CallCostResponse } from './three-cx.interface';
+import { GetReportCallCostByExtensionGroupDto } from './dto/three-cx.dto';
 
 @Controller('three-cx')
 export class ThreeCxController {
@@ -16,17 +24,17 @@ export class ThreeCxController {
   @Get('ReportCallCostByExtensionGroup')
   async getReportCallCostByExtensionGroup(
     @Headers('authorization') authorization: string,
-    @Query('periodFrom') periodFrom?: string,
-    @Query('periodTo') periodTo?: string,
+    @Query() parameterDto: GetReportCallCostByExtensionGroupDto,
   ): Promise<CallCostResponse> {
-    // Extract the token from the Authorization header
     const accessToken = this.extractBearerToken(authorization);
-
     if (!accessToken) {
       throw new Error('Authorization token is required');
     }
 
-    // console.log(accessToken);
+    const { periodFrom, periodTo } = parameterDto;
+    if (!parameterDto || !periodFrom) {
+      throw new BadRequestException('periodFrom is required');
+    }
 
     return this.threeCxService.getReportCallCostByExtensionGroup(
       accessToken,

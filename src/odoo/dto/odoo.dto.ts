@@ -1,4 +1,3 @@
-// src/odoo/dto/set-system-parameter.dto.ts
 import { IsString, IsNotEmpty } from 'class-validator';
 
 export class SetSystemParameterDto {

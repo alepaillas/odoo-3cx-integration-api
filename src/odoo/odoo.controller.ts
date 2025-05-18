@@ -10,7 +10,7 @@ import {
 } from '@nestjs/common';
 import { OdooService } from './odoo.service';
 import { OdooSystemParameter } from './odoo.interface';
-import { SetSystemParameterDto } from './dto/set-system-parameer.dto';
+import { SetSystemParameterDto } from './dto/odoo.dto';
 
 @Controller('odoo')
 export class OdooController {

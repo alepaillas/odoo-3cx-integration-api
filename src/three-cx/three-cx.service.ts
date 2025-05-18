@@ -51,7 +51,7 @@ export class ThreeCxService {
 
   async getReportCallCostByExtensionGroup(
     accessToken: string,
-    periodFrom?: string,
+    periodFrom: string,
     periodTo?: string,
   ): Promise<CallCostResponse> {
     const config = this.configService.getThreeCxConfig();
@@ -62,7 +62,7 @@ export class ThreeCxService {
     const callClass = config.call_class;
 
     // Use provided dates or fall back to fixed date/default values
-    const fromDate = periodFrom || this.getFixedFromDate();
+    const fromDate = periodFrom;
     const encodedFromDate = encodeURIComponent(fromDate.toString());
     const toDate = periodTo || new Date().toISOString();
     const encodedToDate = encodeURIComponent(toDate.toString());
@@ -101,11 +101,6 @@ export class ThreeCxService {
       this.logger.error(`Failed to fetch call cost data: ${errorMessage}`);
       throw new Error(`Failed to fetch call cost data: ${errorMessage}`);
     }
-  }
-
-  private getFixedFromDate(): string {
-    // For now, return a fixed date
-    return '2025-01-01T00:00:00.000Z';
   }
 
   private getErrorMessage(error: unknown): string {

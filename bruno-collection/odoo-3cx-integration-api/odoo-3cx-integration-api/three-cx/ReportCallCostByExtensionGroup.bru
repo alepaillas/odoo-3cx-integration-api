@@ -5,9 +5,13 @@ meta {
 }
 
 get {
-  url: {{url}}/three-cx/ReportCallCostByExtensionGroup
+  url: {{url}}/three-cx/ReportCallCostByExtensionGroup?periodFrom=2025-01-01T00:00:00.000Z
   body: none
   auth: bearer
+}
+
+params:query {
+  periodFrom: 2025-01-01T00:00:00.000Z
 }
 
 auth:bearer {
