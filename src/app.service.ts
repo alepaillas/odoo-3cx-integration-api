@@ -74,6 +74,12 @@ export class AppService {
         await this.odooService.createCallActivity(lead, userId, summary);
       }
 
+      const currentDate: string = new Date().toISOString();
+      await this.odooService.setSystemParameter(
+        'threecx.last_integration_datetime',
+        currentDate,
+      );
+
       return 'Leads created successfully!';
     } catch (error) {
       const errorMessage = this.getErrorMessage(error);
