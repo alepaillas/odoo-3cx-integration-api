@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Post } from '@nestjs/common';
 import { AppService } from './app.service';
 
 @Controller()
@@ -8,5 +8,11 @@ export class AppController {
   @Get()
   getHello(): string {
     return this.appService.getHello();
+  }
+
+  @Post('integrate-three-cx-data')
+  async integrateThreeCxData(): Promise<string> {
+    const data = await this.appService.integrateThreeCxData();
+    return data;
   }
 }
