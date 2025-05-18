@@ -1,0 +1,17 @@
+meta {
+  name: post-lead
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{url}}/odoo/lead
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "name": "test"
+  }
+}

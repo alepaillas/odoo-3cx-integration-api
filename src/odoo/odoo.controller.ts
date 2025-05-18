@@ -7,10 +7,12 @@ import {
   HttpCode,
   HttpStatus,
   BadRequestException,
+  UsePipes,
+  ValidationPipe,
 } from '@nestjs/common';
 import { OdooService } from './odoo.service';
 import { OdooSystemParameter } from './odoo.interface';
-import { SetSystemParameterDto } from './dto/odoo.dto';
+import { CreateLeadDto, SetSystemParameterDto } from './dto/odoo.dto';
 
 @Controller('odoo')
 export class OdooController {
@@ -34,5 +36,17 @@ export class OdooController {
       parameterDto.key,
       parameterDto.value,
     );
+  }
+
+  @Post('lead')
+  @HttpCode(HttpStatus.CREATED)
+  @UsePipes(new ValidationPipe())
+  async createLead(@Body() leadData: CreateLeadDto): Promise<unknown> {
+    // console.log(leadData);
+    if (!leadData) {
+      throw new BadRequestException('Lead data is required');
+    }
+    const id = await this.odooService.createLead(leadData);
+    return { id: id };
   }
 }

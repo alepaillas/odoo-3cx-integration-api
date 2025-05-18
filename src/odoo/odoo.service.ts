@@ -4,10 +4,13 @@ import { HttpService } from '@nestjs/axios';
 import { firstValueFrom } from 'rxjs';
 import { ConfigService } from 'src/config/config.service';
 import {
+  OdooError,
+  OdooLeadResponse,
   OdooLoginResponse,
   OdooResponse,
   OdooSystemParameter,
 } from './odoo.interface';
+import { CreateLeadDto } from './dto/odoo.dto';
 
 @Injectable()
 export class OdooService {
@@ -234,6 +237,75 @@ export class OdooService {
     }
   }
 
+  async createLead(leadData: CreateLeadDto): Promise<OdooLeadResponse> {
+    const config = this.configService.getOdooConfig();
+    const { url } = config;
+
+    // Authenticate if we don't have a session
+    if (!this.sessionCookie) {
+      await this.authenticate();
+    }
+
+    const apiUrl = `${url}/web/dataset/call_kw`;
+
+    // Ensure this is created as a lead, not an opportunity
+    const leadPayload = {
+      ...leadData,
+      type: 'lead', // Explicitly set as lead
+    };
+
+    const data = {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'crm.lead',
+        method: 'create',
+        args: [leadPayload],
+        kwargs: {},
+      },
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Cookie: this.sessionCookie as string,
+    };
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post<OdooResponse<OdooLeadResponse>>(apiUrl, data, {
+          headers,
+        }),
+      );
+
+      // Check for Odoo errors in the response
+      if (response.data.error) {
+        const error = response.data.error;
+        const errorDetails = this.formatOdooError(error);
+        this.logger.error(`Odoo API Error: ${errorDetails}`);
+        throw new Error(errorDetails);
+      }
+
+      if (!response.data.result) {
+        throw new Error('No result received from Odoo API');
+      }
+
+      return response.data.result;
+    } catch (error) {
+      // If we get a session expired error, try to reauthenticate once
+      if (this.isSessionExpiredError(error)) {
+        this.logger.log('Session expired, attempting to reauthenticate');
+        await this.authenticate();
+
+        // Retry the request with new session
+        return this.createLead(leadData);
+      }
+
+      const errorMessage = this.getErrorMessage(error);
+      this.logger.error(`Failed to create lead: ${errorMessage}`);
+      throw new Error(`Failed to create lead: ${errorMessage}`);
+    }
+  }
+
   private isSessionExpiredError(error: unknown): boolean {
     if (error instanceof Error) {
       return error.message.includes('Session Expired');
@@ -249,5 +321,13 @@ export class OdooService {
       return error;
     }
     return 'Unknown error';
+  }
+
+  private formatOdooError(error: OdooError): string {
+    return (
+      `Odoo Error (${error.code}): ${error.message}\n` +
+      `Details: ${error.data.message}\n` +
+      `Debug: ${error.data.debug}`
+    );
   }
 }
