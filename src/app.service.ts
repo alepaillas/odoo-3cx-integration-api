@@ -2,6 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ThreeCxService } from './three-cx/three-cx.service';
 import { OdooService } from './odoo/odoo.service';
 import { CallCostResponse } from './three-cx/three-cx.interface';
+import { parseDuration } from './utils/duration.utils';
 
 @Injectable()
 export class AppService {
@@ -44,6 +45,8 @@ export class AppService {
       // Iterate over each entry in the reportCallCost value array
       for (const entry of reportCallCost.value) {
         const leadName = `Llamada de ${entry.DstDn} atendida por ${entry.SrcDisplayName}`;
+        const talkingDuration = parseDuration(entry.TalkingDur);
+        const summary = `Llamada hecha a las ${entry.StartTime} con duración de ${talkingDuration}`;
 
         // Find the user ID for the salesperson
         const userId = await this.odooService.findUserByName(
@@ -55,11 +58,20 @@ export class AppService {
         // console.log(userId);
 
         // Create a lead for each entry
-        await this.odooService.createLead({
+        const lead = await this.odooService.createLead({
           name: leadName,
           phone: entry.DstDn,
           user_id: userId,
         });
+        // console.log(lead);
+        // Create a call activity for the lead
+        // const activity = await this.odooService.createCallActivity(
+        //   lead,
+        //   userId,
+        //   summary,
+        // );
+        // console.log(activity);
+        await this.odooService.createCallActivity(lead, userId, summary);
       }
 
       return 'Leads created successfully!';

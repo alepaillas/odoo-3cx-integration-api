@@ -5,7 +5,6 @@ import { firstValueFrom } from 'rxjs';
 import { ConfigService } from 'src/config/config.service';
 import {
   OdooError,
-  OdooLeadResponse,
   OdooLoginResponse,
   OdooResponse,
   OdooSystemParameter,
@@ -237,7 +236,7 @@ export class OdooService {
     }
   }
 
-  async createLead(leadData: CreateLeadDto): Promise<OdooLeadResponse> {
+  async createLead(leadData: CreateLeadDto): Promise<number> {
     const config = this.configService.getOdooConfig();
     const { url } = config;
 
@@ -272,7 +271,7 @@ export class OdooService {
 
     try {
       const response = await firstValueFrom(
-        this.httpService.post<OdooResponse<OdooLeadResponse>>(apiUrl, data, {
+        this.httpService.post<OdooResponse<number>>(apiUrl, data, {
           headers,
         }),
       );
@@ -358,6 +357,228 @@ export class OdooService {
 
       throw error;
     }
+  }
+
+  async createCallActivity(
+    leadId: number,
+    userId: number,
+    summary: string,
+  ): Promise<number | null> {
+    // const config = this.configService.getOdooConfig();
+    // const { url } = config;
+
+    if (!this.sessionCookie) {
+      await this.authenticate();
+    }
+
+    // First, verify the lead exists
+    const leadExists = await this.verifyLeadExists(leadId);
+    if (!leadExists) {
+      throw new Error(`Lead with ID ${leadId} does not exist`);
+    }
+
+    // const apiUrl = `${url}/web/dataset/call_kw`;
+
+    // Get the model ID for 'crm.lead'
+    const resModelId = await this.getModelId('crm.lead');
+    if (!resModelId) {
+      throw new Error('Failed to get model ID for crm.lead');
+    }
+
+    // Get the activity type ID for 'Call'
+    const activityTypeId = await this.getActivityTypeId('Call');
+    if (!activityTypeId) {
+      throw new Error('Failed to get activity type ID for Call');
+    }
+
+    // Create the activity data
+    const activityData = {
+      res_id: leadId,
+      res_model: 'crm.lead',
+      res_model_id: resModelId,
+      activity_type_id: activityTypeId,
+      summary: summary,
+      user_id: userId,
+      date_deadline: new Date().toISOString().split('T')[0], // Today's date
+    };
+
+    try {
+      // Create the activity
+      const activityId = await this.createActivity(activityData);
+
+      // Mark the activity as done
+      await this.markActivityAsDone(activityId);
+
+      return activityId;
+    } catch (error) {
+      if (this.isSessionExpiredError(error)) {
+        this.logger.log('Session expired, attempting to reauthenticate');
+        await this.authenticate();
+        return this.createCallActivity(leadId, userId, summary);
+      }
+
+      const errorMessage = this.getErrorMessage(error);
+      this.logger.error(`Failed to create call activity: ${errorMessage}`);
+      throw new Error(`Failed to create call activity: ${errorMessage}`);
+    }
+  }
+  private async verifyLeadExists(leadId: number): Promise<boolean> {
+    const config = this.configService.getOdooConfig();
+    const apiUrl = `${config.url}/web/dataset/call_kw`;
+
+    const data = {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'crm.lead',
+        method: 'search_count',
+        args: [[['id', '=', leadId]]],
+        kwargs: {},
+      },
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Cookie: this.sessionCookie as string,
+    };
+
+    try {
+      const response = await firstValueFrom(
+        this.httpService.post<OdooResponse<number>>(apiUrl, data, { headers }),
+      );
+
+      if (response.data.error) {
+        throw new Error(this.formatOdooError(response.data.error));
+      }
+
+      // search_count returns a number, not an array
+      return response.data?.result !== undefined && response.data.result > 0;
+    } catch (error) {
+      this.logger.error(
+        `Failed to verify lead existence: ${this.getErrorMessage(error)}`,
+      );
+      return false;
+    }
+  }
+
+  private async getModelId(modelName: string): Promise<number | null> {
+    const config = this.configService.getOdooConfig();
+    const apiUrl = `${config.url}/web/dataset/call_kw`;
+
+    const data = {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'ir.model',
+        method: 'search',
+        args: [[['model', '=', modelName]]],
+        kwargs: { limit: 1 },
+      },
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Cookie: this.sessionCookie as string,
+    };
+
+    const response = await firstValueFrom(
+      this.httpService.post<OdooResponse<number[]>>(apiUrl, data, { headers }),
+    );
+
+    return response.data?.result?.[0] || null;
+  }
+
+  private async getActivityTypeId(name: string): Promise<number | null> {
+    const config = this.configService.getOdooConfig();
+    const apiUrl = `${config.url}/web/dataset/call_kw`;
+
+    const data = {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'mail.activity.type',
+        method: 'search',
+        args: [[['name', '=', name]]],
+        kwargs: { limit: 1 },
+      },
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Cookie: this.sessionCookie as string,
+    };
+
+    const response = await firstValueFrom(
+      this.httpService.post<OdooResponse<number[]>>(apiUrl, data, { headers }),
+    );
+
+    return response.data?.result?.[0] || null;
+  }
+
+  private async createActivity(activityData: any): Promise<number> {
+    const config = this.configService.getOdooConfig();
+    const apiUrl = `${config.url}/web/dataset/call_kw`;
+
+    const data = {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'mail.activity',
+        method: 'create',
+        args: [activityData],
+        kwargs: {},
+      },
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Cookie: this.sessionCookie as string,
+    };
+
+    const response = await firstValueFrom(
+      this.httpService.post<OdooResponse<number>>(apiUrl, data, { headers }),
+    );
+
+    if (response.data.error) {
+      throw new Error(this.formatOdooError(response.data.error));
+    }
+
+    if (!response.data.result) {
+      throw new Error('No activity ID received from Odoo API');
+    }
+
+    return response.data.result;
+  }
+
+  private async markActivityAsDone(activityId: number): Promise<void> {
+    const config = this.configService.getOdooConfig();
+    const apiUrl = `${config.url}/web/dataset/call_kw`;
+
+    const data = {
+      jsonrpc: '2.0',
+      method: 'call',
+      params: {
+        model: 'mail.activity',
+        method: 'action_done',
+        args: [[activityId]],
+        kwargs: {},
+      },
+    };
+
+    const headers = {
+      'Content-Type': 'application/json',
+      Cookie: this.sessionCookie as string,
+    };
+
+    const response = await firstValueFrom(
+      this.httpService.post<OdooResponse<boolean>>(apiUrl, data, { headers }),
+    );
+
+    if (response.data.error) {
+      throw new Error(this.formatOdooError(response.data.error));
+    }
+
+    // console.log(response);
   }
 
   private isSessionExpiredError(error: unknown): boolean {
