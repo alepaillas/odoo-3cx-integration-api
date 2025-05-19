@@ -1,3 +1,7 @@
+headers {
+  x-api-key: {{process.env.API_KEY}}
+}
+
 vars:pre-request {
   url: {{process.env.url}}
   threeCxToken: {{process.env.THREECX_TOKEN}}
